@@ -569,7 +569,6 @@ class IStreamFilmListeScreen(Screen):
 
 	def keyShowThumb(self):
 		print "eliinfo Funktion show Thumb Pictures", self.pages
-		
 		if self.keyLocked:
 			return
 		if self.filmListe[0][0]:
@@ -579,11 +578,9 @@ class IStreamFilmListeScreen(Screen):
 			except NameError:
 				newdata = "leer"
 				print 'eliinto noch kein filmdatensatz vorhanden', newdata, self.filmListe[0][0]
-			
 			while newdata == self.filmListe[0][0]:
 				print 'eliinfo sleep warte auf neue Filmdaten', newdata
 				time.sleep(0.2)
-						
 		newdata = self.filmListe[0][0]
 		print 'eliinfo neue Filmdaten', newdata		
 		self.session.openWithCallback(self.ShowThumbCallback, ShowThumbscreen, thumbsFilmListe = self.filmListe, filmpage = self.page, filmpages = self.pages)
@@ -600,13 +597,7 @@ class IStreamFilmListeScreen(Screen):
 					self.page = 1
 				#print "Page %d/%d" % (self.page,self.pages)
 				if oldpage != self.page:
-					#self.loadPage()
 					self.loadPage()
-					#while self.eventL.is_set():
-					#while self.eventH.is_set():
-					#while not self.filmQ.empty():
-						#url = self.filmQ.get_nowait()
-					#	print "eliinfo warte auf ende" 
 					print "eliinfo naechste Filmseite starten"
 					self.keyShowThumb()
 			else:
