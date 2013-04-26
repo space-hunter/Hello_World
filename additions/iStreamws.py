@@ -1,11 +1,11 @@
-﻿#	-*-	coding:	utf-8	-*-
+#	-*-	coding:	utf-8	-*-
 
 from Plugins.Extensions.MediaPortal.resources.imports import *
 import Queue
 import threading
 from Plugins.Extensions.MediaPortal.resources.playhttpmovie import PlayHttpMovie
 from Plugins.Extensions.MediaPortal.resources.showAsThumb import ShowThumbscreen
-
+import time
 
 # teilweise von movie2k geliehen
 if fileExists('/usr/lib/enigma2/python/Plugins/Extensions/TMDb/plugin.pyo'):
@@ -258,6 +258,7 @@ class IStreamFilmListeScreen(Screen):
 		self.neueFilme = re.match('.*?Neue Filme',self.genreName)
 		self.sucheFilme = re.match('.*?Videosuche',self.genreName)
 		self.setGenreStrTitle()
+		self.newdata = "leer"
 		
 		self.chooseMenuList = MenuList([], enableWrapAround=True, content=eListboxPythonMultiContent)
 		self.chooseMenuList.l.setFont(0, gFont('mediaportal', 23))
@@ -317,7 +318,7 @@ class IStreamFilmListeScreen(Screen):
 		
 	def loadPageData(self, data):
 		print "loadPageData:"
-			
+		print "eliinfi loadPageData:"	
 		if not self.neueFilme:
 			filme = re.findall('<div class="cover">.*?<a href="(.*?)" rel=.*?title="(.*?)"><img class=.*?\?src=(.*?)&h=', data, re.S)
 		else:
@@ -325,6 +326,7 @@ class IStreamFilmListeScreen(Screen):
 
 		if filme:
 			print "Movies found !"
+			print "eliinfo Movies found !"
 			if not self.pages:
 				m = re.findall('<span class=\'pages\'>Seite 1 von (.*?)</', data)
 				if m:
@@ -337,6 +339,7 @@ class IStreamFilmListeScreen(Screen):
 				self['page'].setText("%d / %d" % (self.page,self.pages))
 				
 			self.filmListe = []
+			print 'eliinfo - neue Filmliste #############'
 			for	(url,name,imageurl) in filme:
 				#print	"Url: ", url, "Name: ", name, "ImgUrl: ", imageurl
 				self.filmListe.append((decodeHtml(name), url, imageurl))
@@ -568,28 +571,25 @@ class IStreamFilmListeScreen(Screen):
 			self.loadPage()
 
 	def keyShowThumb(self):
-		print "eliinfo Funktion show Thumb Pictures", self.pages
+		print "eliinfo Funktion show Thumb Pictures, self.page, self.pages self.newdata:", self.page, self.pages, self.newdata
+		
 		if self.keyLocked:
 			return
 		if self.filmListe[0][0]:
-			print 'eliinto filmdaten vorhanden', self.filmListe[0][0]
-			try:
-				newdata
-			except NameError:
-				newdata = "leer"
-				print 'eliinto noch kein filmdatensatz vorhanden', newdata, self.filmListe[0][0]
-			while newdata == self.filmListe[0][0]:
-				print 'eliinfo sleep warte auf neue Filmdaten', newdata
-				time.sleep(0.2)
-		newdata = self.filmListe[0][0]
-		print 'eliinfo neue Filmdaten', newdata		
+			print 'eliinto filmdaten vorhanden self.filmListe[0][0], self.newdata', self.filmListe[0][0], self.newdata
+#			while self.newdata == self.filmListe[0][0]:
+#				print 'eliinfo sleep warte auf neue Filmdaten', self.newdata
+#				time.sleep(0.5)
+						
+		self.newdata = self.filmListe[0][0]
+		print 'eliinfo neue Filmdaten', self.newdata		
 		self.session.openWithCallback(self.ShowThumbCallback, ShowThumbscreen, thumbsFilmListe = self.filmListe, filmpage = self.page, filmpages = self.pages)
 
 	
 	def ShowThumbCallback(self, streamLink = None, streamName = None, imageLink = None):
 		if streamLink is not None:
 			if streamLink is "next":
-				print "eliinfo naechste Filmseite"
+				print "eliinfo naechste Filmseite - old self.filmListe[0][0]", self.filmListe[0][0]
 				oldpage = self.page
 				if (self.page + 1) <= self.pages:
 					self.page += 1
@@ -597,7 +597,15 @@ class IStreamFilmListeScreen(Screen):
 					self.page = 1
 				#print "Page %d/%d" % (self.page,self.pages)
 				if oldpage != self.page:
+					#self.loadPage()
 					self.loadPage()
+					print "eliinfo sleep 10 sec: self.page, self.pages", self.page, self.pages
+					time.sleep(5)
+					#while self.eventL.is_set():
+					#while self.eventH.is_set():
+					#while not self.filmQ.empty():
+						#url = self.filmQ.get_nowait()
+					#	print "eliinfo warte auf ende" 
 					print "eliinfo naechste Filmseite starten"
 					self.keyShowThumb()
 			else:
@@ -798,9 +806,10 @@ class IStreamStreams(Screen, ConfigListScreen):
 		if stream_url == None:
 			message = self.session.open(MessageBox, _("Stream not found, try another Stream Hoster."), MessageBox.TYPE_INFO, timeout=3)
 		else:
-			if config.mediaportal.useHttpDump.value:
+			fx = re.match('.*?flashx', stream_url)
+			if config.mediaportal.useHttpDump.value or fx:
 				title = self.filmName + self['liste'].getCurrent()[0][2]
-				if re.match('.*?flashx', stream_url):
+				if fx:
 					movieinfo = [stream_url,self.filmName,"http://play.flashx.tv/"]
 				else:
 					movieinfo = [stream_url,self.filmName,""]
